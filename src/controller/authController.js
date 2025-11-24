@@ -67,7 +67,6 @@ export const handleCallback = TryCatch(async (req, res) => {
 
 export const handleNowPlaying = TryCatch(async (req, res) => {
     const spotifyData = await Spotify.findOne({ name: "default_user" });
-
     if (!spotifyData) {
         throw new ErrorHandler("Not authorized. Please login first.", 401);
     }
@@ -86,37 +85,36 @@ export const handleNowPlaying = TryCatch(async (req, res) => {
             refresh_token: refreshToken,
         }),
     });
-
     if (!accessTokenResponse.ok) {
         const errorText = await accessTokenResponse.text();
         throw new ErrorHandler(`Failed to refresh token: ${errorText}`, accessTokenResponse.status);
     }
 
-    const accessTokenData = await accessTokenResponse.json();
+    const accessTokenData = await accessTokenResponse.json(); 
     const accessToken = accessTokenData.access_token;
 
     const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-
     if (!response.ok) {
-        const errorText = await response.text();
-        throw new ErrorHandler(`Spotify API error: ${errorText}`, response.status);
-    }
+       return res.status(400).json({success: false, message: "Failed to get currently playing track"});
+    } 
 
-    const data = await response.json();
-    console.log("data", data);
-
-    if (data.is_playing) {
-        const updatedSpotifyData = await Spotify.findOneAndUpdate(
-            { name: "default_user" },
-            { last_played_id: data.item?.id, access_token: accessToken },
-            { upsert: true, new: true }
-        );
-        return res.status(200).json({ track_id: updatedSpotifyData.last_played_id });
-    }
-    else {
+    if (response.status === 204) {
         return res.status(200).json({ track_id: spotifyData.last_played_id });
-    }
+    } else { 
+        const data = await response.json(); 
+        if (data.is_playing) {
+            const updatedSpotifyData = await Spotify.findOneAndUpdate(
+                { name: "default_user" },
+                { last_played_id: data.item?.id, access_token: accessToken },
+                { upsert: true, new: true }
+            );
+            return res.status(200).json({ track_id: updatedSpotifyData.last_played_id });
+        }
+        else {
+            return res.status(200).json({ track_id: spotifyData.last_played_id });
+        }
+    } 
 });      
