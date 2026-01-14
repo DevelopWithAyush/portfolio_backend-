@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import wakaTimeRoutes from './routes/wakaTimeRoutes.js';
 import gitRoutes from './routes/gitRoutes.js';
+import resumeRoutes from './routes/resumeRoutes.js';
 import os from 'os';
 import { errorMiddleware } from './utility/errorHandler.js';
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/wakatime', wakaTimeRoutes);
 app.use('/api/v1/git', gitRoutes);
+app.use('/api/v1/resume', resumeRoutes);
 app.use(errorMiddleware);
 
 const connectDB = async () => {
@@ -39,7 +41,7 @@ const connectDB = async () => {
         console.error('MongoDB connection error:', error);
         process.exit(1);
     }
-}; 
+};
 
 
 
